@@ -6,6 +6,7 @@ from app.api.routers import (
     events,
     health,
     health_services,
+    mobility,
     places,
 )
 
@@ -21,6 +22,7 @@ app.include_router(events.router)
 app.include_router(health_services.router)
 app.include_router(places.router)
 app.include_router(city_services.router)
+app.include_router(mobility.router)
 
 
 @app.get("/", tags=["Root"])
