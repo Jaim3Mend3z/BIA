@@ -1,8 +1,6 @@
 ﻿from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from geoalchemy2.shape import from_shape
-from shapely.geometry import Point
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,18 +10,12 @@ from app.schemas.health_service import (
     HealthServiceCreate,
     HealthServiceResponse,
 )
+from app.services.geospatial import build_location, nearby_query
 
 router = APIRouter(
     prefix="/health-services",
     tags=["Health Services"],
 )
-
-
-def build_location(latitude: float, longitude: float):
-    return from_shape(
-        Point(longitude, latitude),
-        srid=4326,
-    )
 
 
 @router.get(
@@ -56,18 +48,11 @@ def nearby_health_services(
     radius_km: float = Query(default=5, gt=0, le=100),
     db: Session = Depends(get_db),
 ):
-    point = build_location(latitude, longitude)
-
-    query = (
-        select(HealthService)
-        .where(
-            HealthService.location.is_not(None),
-            HealthService.location.distance_centroid(point)
-            <= radius_km * 1000,
-        )
-        .order_by(
-            HealthService.location.distance_centroid(point)
-        )
+    query = nearby_query(
+        HealthService,
+        latitude,
+        longitude,
+        radius_km,
     )
 
     return db.scalars(query).all()

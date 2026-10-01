@@ -1,26 +1,18 @@
 ﻿from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from geoalchemy2.shape import from_shape
-from shapely.geometry import Point
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.models.place import Place
 from app.schemas.place import PlaceCreate, PlaceResponse
+from app.services.geospatial import build_location, nearby_query
 
 router = APIRouter(
     prefix="/places",
     tags=["Places"],
 )
-
-
-def build_location(latitude: float, longitude: float):
-    return from_shape(
-        Point(longitude, latitude),
-        srid=4326,
-    )
 
 
 @router.get(
@@ -53,18 +45,11 @@ def nearby_places(
     radius_km: float = Query(default=5, gt=0, le=100),
     db: Session = Depends(get_db),
 ):
-    point = build_location(latitude, longitude)
-
-    query = (
-        select(Place)
-        .where(
-            Place.location.is_not(None),
-            Place.location.distance_centroid(point)
-            <= radius_km * 1000,
-        )
-        .order_by(
-            Place.location.distance_centroid(point)
-        )
+    query = nearby_query(
+        Place,
+        latitude,
+        longitude,
+        radius_km,
     )
 
     return db.scalars(query).all()
