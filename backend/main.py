@@ -1,6 +1,13 @@
 ﻿from fastapi import FastAPI
 
-from app.api.routers import auth, events, health, health_services, places
+from app.api.routers import (
+    auth,
+    city_services,
+    events,
+    health,
+    health_services,
+    places,
+)
 
 app = FastAPI(
     title="BIA - Bogotá Inteligente Asistente",
@@ -13,6 +20,7 @@ app.include_router(auth.router)
 app.include_router(events.router)
 app.include_router(health_services.router)
 app.include_router(places.router)
+app.include_router(city_services.router)
 
 
 @app.get("/", tags=["Root"])
